@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حل المعادلة التفاضلية - Runge-Kutta</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298, #1c3f6e);
+            color: #fff;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 1000px;
+            width: 100%;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+            color: #fff;
+        }
+        h1 {
+            color: #00d2ff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+        }
+        input, textarea, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+        button {
+            background-color: #00d2ff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background-color: #00a8cc;
+        }
+        .result-card {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+        }
+        .chart-container {
+            margin-top: 20px;
+            height: 400px;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #fff;
+            text-align: center;
+        }
+        .result-table th, .result-table td {
+            padding: 8px;
+            border: 1px solid #00d2ff;
+        }
+        .result-table th {
+            background: #00a8cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>حل المعادلة التفاضلية - Runge-Kutta</h1>
+        <label for="equation">المعادلة التفاضلية dy/dx = f(x, y):</label>
+        <textarea id="equation" placeholder="مثال: x + y"></textarea>
+        <label for="x0">النقطة الابتدائية x<sub>0</sub>:</label>
+        <input type="number" id="x0" placeholder="أدخل قيمة x0">
+        <label for="y0">النقطة الابتدائية y<sub>0</sub>:</label>
+        <input type="number" id="y0" placeholder="أدخل قيمة y0">
+        <label for="h">قيمة الخطوة h:</label>
+        <input type="number" id="h" placeholder="أدخل قيمة h" step="0.01">
+        <label for="steps">عدد الخطوات:</label>
+        <input type="number" id="steps" placeholder="أدخل عدد الخطوات">
+        <label for="analytical">الحل التحليلي y(x):</label>
+        <textarea id="analytical" placeholder="مثال: Math.exp(x) * 2 - x - 1"></textarea>
+        <label for="order">اختيار الدرجة:</label>
+        <select id="order">
+            <option value="4">Runge-Kutta - الدرجة الرابعة</option>
+            <option value="2">Runge-Kutta - الدرجة الثانية</option>
+        </select>
+        <button onclick="solve()">احسب</button>
+        <div id="result" class="result-card"></div>
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let chart;
+
+        function rungeKutta(f, x0, y0, h, steps, order = 4) {
+            let x = x0;
+            let y = y0;
+            const results = [{ step: 0, x: x, y: y }];
+
+            for (let i = 1; i <= steps; i++) {
+                if (order === 4) {
+                    const k1 = h * f(x, y);
+                    const k2 = h * f(x + h / 2, y + k1 / 2);
+                    const k3 = h * f(x + h / 2, y + k2 / 2);
+                    const k4 = h * f(x + h, y + k3);
+                    y += (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+                } else {
+                    const k1 = h * f(x, y);
+                    const k2 = h * f(x + h, y + k1);
+                    y += (k1 + k2) / 2;
+                }
+                x += h;
+                results.push({ step: i, x: Number(x.toFixed(8)), y: Number(y.toFixed(8)) });
+            }
+            return results;
+        }
+
+        function solve() {
+            const equationStr = document.getElementById("equation").value;
+            const x0 = parseFloat(document.getElementById("x0").value);
+            const y0 = parseFloat(document.getElementById("y0").value);
+            const h = parseFloat(document.getElementById("h").value);
+            const steps = parseInt(document.getElementById("steps").value);
+            const analyticalStr = document.getElementById("analytical").value;
+            const order = parseInt(document.getElementById("order").value);
+
+            if ([equationStr, analyticalStr].some((s) => s.trim() === "") || [x0, y0, h, steps].some(isNaN)) {
+                alert("يرجى إدخال جميع القيم بشكل صحيح.");
+                return;
+            }
+
+            try {
+                const f = new Function("x", "y", `return ${equationStr};`);
+                const analytical = new Function("x", `return ${analyticalStr};`);
+
+                const numericalResults = rungeKutta(f, x0, y0, h, steps, order);
+
+                const results = numericalResults.map((r) => {
+                    const yExact = analytical(r.x);
+                    return { ...r, yExact, error: Math.abs(yExact - r.y) };
+                });
+
+                displayResults(results);
+                plotChart(results);
+            } catch (error) {
+                alert("خطأ أثناء معالجة المعادلة أو الحل التحليلي.");
+                console.error(error);
+            }
+        }
+
+        function displayResults(results) {
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = `
+                <h2>النتائج</h2>
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>الخطوة</th>
+                            <th>x</th>
+                            <th>y (تقريبي)</th>
+                            <th>y (تحليلي)</th>
+                            <th>الخطأ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map((r) => `
+                            <tr>
+                                <td>${r.step}</td>
+                                <td>${r.x}</td>
+                                <td>${r.y}</td>
+                                <td>${r.yExact.toFixed(8)}</td>
+                                <td>${r.error.toFixed(8)}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function plotChart(results) {
+            const ctx = document.getElementById("chart").getContext("2d");
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: results.map((r) => r.x),
+                    datasets: [
+                        {
+                            label: "الحل التقريبي",
+                            data: results.map((r) => r.y),
+                            borderColor: "#00d2ff",
+                            tension: 0.1,
+                        },
+                        {
+                            label: "الحل التحليلي",
+                            data: results.map((r) => r.yExact),
+                            borderColor: "#ff5733",
+                            borderDash: [5, 5],
+                            tension: 0.1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: "x" } },
+                        y: { title: { display: true, text: "y" } },
+                    },
+                },
+            });
+        }
+    </script>
+</body>
+</html>
