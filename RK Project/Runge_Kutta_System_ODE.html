@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حل نظام المعادلات التفاضلية - Runge-Kutta</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1e3c72, #2a5298, #1c3f6e);
+            color: #fff;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        body.light-theme {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            color: #333;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 1000px;
+            width: 100%;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        .light-theme .container {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #00d2ff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            transition: color 0.5s ease;
+        }
+
+        .light-theme h1 {
+            color: #1e3c72;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: color 0.5s ease;
+        }
+
+        .light-theme label {
+            color: #333;
+        }
+
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 2px solid #00d2ff;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #00a8cc;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        .light-theme input, .light-theme textarea, .light-theme select {
+            background: rgba(0, 0, 0, 0.1);
+            color: #333;
+            border-color: #1e3c72;
+        }
+
+        .light-theme input:focus, .light-theme textarea:focus, .light-theme select:focus {
+            border-color: #2a5298;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            background-color: #00d2ff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #00a8cc;
+        }
+
+        .light-theme button {
+            background-color: #1e3c72;
+            color: #fff;
+        }
+
+        .light-theme button:hover {
+            background-color: #2a5298;
+        }
+
+        .result-card {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            transition: background 0.5s ease;
+        }
+
+        .light-theme .result-card {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 400px;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #fff;
+            text-align: center;
+            transition: color 0.5s ease;
+        }
+
+        .light-theme .result-table {
+            color: #333;
+        }
+
+        .result-table th, .result-table td {
+            padding: 8px;
+            border: 1px solid #00d2ff;
+            transition: border-color 0.5s ease;
+        }
+
+        .light-theme .result-table th, .light-theme .result-table td {
+            border-color: #1e3c72;
+        }
+
+        .result-table th {
+            background: #00a8cc;
+            transition: background 0.5s ease;
+        }
+
+        .light-theme .result-table th {
+            background: #1e3c72;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #00d2ff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.5s ease;
+        }
+
+        .theme-toggle:hover {
+            background: #00a8cc;
+        }
+
+        .light-theme .theme-toggle {
+            background: #1e3c72;
+        }
+
+        .light-theme .theme-toggle:hover {
+            background: #2a5298;
+        }
+
+        .theme-toggle i {
+            font-size: 24px;
+            color: #fff;
+            transition: color 0.5s ease;
+        }
+
+        .light-theme .theme-toggle i {
+            color: #fff;
+        }
+
+        /* Language Toggle Button */
+        .language-toggle {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: #00d2ff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.5s ease;
+        }
+
+        .language-toggle:hover {
+            background: #00a8cc;
+        }
+
+        .light-theme .language-toggle {
+            background: #1e3c72;
+        }
+
+        .light-theme .language-toggle:hover {
+            background: #2a5298;
+        }
+
+        .language-toggle i {
+            font-size: 24px;
+            color: #fff;
+            transition: color 0.5s ease;
+        }
+
+        .light-theme .language-toggle i {
+            color: #fff;
+        }
+
+        /* Reset Button */
+        .reset-button {
+            background-color: #ff5733;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .reset-button:hover {
+            background-color: #ff1a1a;
+        }
+
+        .light-theme .reset-button {
+            background-color: #ff5733;
+        }
+
+        .light-theme .reset-button:hover {
+            background-color: #ff1a1a;
+        }
+
+        /* Interactive Background */
+        .interactive-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle, transparent 20%, #1e3c72 20%, #1e3c72 80%, transparent 80%, transparent),
+                        radial-gradient(circle, transparent 20%, #2a5298 20%, #2a5298 80%, transparent 80%, transparent);
+            background-size: 50px 50px;
+            animation: moveBackground 10s linear infinite;
+        }
+
+        @keyframes moveBackground {
+            from {
+                background-position: 0 0;
+            }
+            to {
+                background-position: 50px 50px;
+            }
+        }
+
+        .light-theme .interactive-background {
+            background: radial-gradient(circle, transparent 20%, #f5f7fa 20%, #f5f7fa 80%, transparent 80%, transparent),
+                        radial-gradient(circle, transparent 20%, #c3cfe2 20%, #c3cfe2 80%, transparent 80%, transparent);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* Explain Section */
+        .explain-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            transition: background 0.5s ease;
+        }
+
+        .light-theme .explain-section {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .explain-section h2 {
+            color: #00d2ff;
+            margin-bottom: 15px;
+            transition: color 0.5s ease;
+        }
+
+        .light-theme .explain-section h2 {
+            color: #1e3c72;
+        }
+
+        .explain-section p {
+            line-height: 1.6;
+            transition: color 0.5s ease;
+        }
+
+        .light-theme .explain-section p {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="interactive-background"></div>
+    <div class="container">
+        <h1 id="title">حل نظام المعادلات التفاضلية - Runge-Kutta</h1>
+        <label for="numEquations" id="numEquations-label">عدد المعادلات:</label>
+        <input type="number" id="numEquations" placeholder="أدخل عدد المعادلات">
+        <button onclick="generateInputs()" id="generate-button">إنشاء حقول الإدخال</button>
+        <div id="equationInputs"></div>
+        <label for="x0" id="x0-label">النقطة الابتدائية x<sub>0</sub>:</label>
+        <input type="number" id="x0" placeholder="أدخل قيمة x0">
+        <label for="h" id="h-label">قيمة الخطوة h:</label>
+        <input type="number" id="h" placeholder="أدخل قيمة h" step="0.01">
+        <label for="steps" id="steps-label">عدد الخطوات:</label>
+        <input type="number" id="steps" placeholder="أدخل عدد الخطوات">
+        <label for="order" id="order-label">اختيار الدرجة:</label>
+        <select id="order">
+            <option value="4">Runge-Kutta - الدرجة الرابعة</option>
+            <option value="2">Runge-Kutta - الدرجة الثانية</option>
+        </select>
+        <button onclick="solve()" id="solve-button">احسب</button>
+        <button class="reset-button" onclick="resetForm()" id="reset-button">إعادة تعيين</button>
+        <div id="result" class="result-card"></div>
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()">
+        DARK
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <!-- Language Toggle Button -->
+    <button class="language-toggle" onclick="toggleLanguage()">
+        LANG
+        <i class="fas fa-language"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script src="chart.js"></script>
+    <script>
+        let chart;
+        let isDarkTheme = true;
+        let isArabic = true;
+
+        const translations = {
+            ar: {
+                title: "حل نظام المعادلات التفاضلية - Runge-Kutta",
+                numEquationsLabel: "عدد المعادلات:",
+                x0Label: "النقطة الابتدائية x<sub>0</sub>:",
+                hLabel: "قيمة الخطوة h:",
+                stepsLabel: "عدد الخطوات:",
+                orderLabel: "اختيار الدرجة:",
+                generateButton: "إنشاء حقول الإدخال",
+                solveButton: "احسب",
+                resetButton: "إعادة تعيين",
+            },
+            en: {
+                title: "Differential Equations System Solver - Runge-Kutta",
+                numEquationsLabel: "Number of Equations:",
+                x0Label: "Initial Point x<sub>0</sub>:",
+                hLabel: "Step Size h:",
+                stepsLabel: "Number of Steps:",
+                orderLabel: "Choose Order:",
+                generateButton: "Generate Input Fields",
+                solveButton: "Calculate",
+                resetButton: "Reset",
+            }
+        };
+
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle("light-theme");
+            isDarkTheme = !isDarkTheme;
+            const themeIcon = document.querySelector(".theme-toggle i");
+            themeIcon.classList.toggle("fa-moon");
+            themeIcon.classList.toggle("fa-sun");
+        }
+
+        function toggleLanguage() {
+            isArabic = !isArabic;
+            updateLanguage();
+        }
+
+        function updateLanguage() {
+            const lang = isArabic ? "ar" : "en";
+            document.getElementById("title").innerHTML = translations[lang].title;
+            document.getElementById("numEquations-label").innerHTML = translations[lang].numEquationsLabel;
+            document.getElementById("x0-label").innerHTML = translations[lang].x0Label;
+            document.getElementById("h-label").innerHTML = translations[lang].hLabel;
+            document.getElementById("steps-label").innerHTML = translations[lang].stepsLabel;
+            document.getElementById("order-label").innerHTML = translations[lang].orderLabel;
+            document.getElementById("generate-button").innerHTML = translations[lang].generateButton;
+            document.getElementById("solve-button").innerHTML = translations[lang].solveButton;
+            document.getElementById("reset-button").innerHTML = translations[lang].resetButton;
+        }
+
+        function resetForm() {
+            document.getElementById("numEquations").value = "";
+            document.getElementById("x0").value = "";
+            document.getElementById("h").value = "";
+            document.getElementById("steps").value = "";
+            document.getElementById("order").value = "4";
+            document.getElementById("equationInputs").innerHTML = "";
+            document.getElementById("result").innerHTML = "";
+            if (chart) chart.destroy();
+        }
+
+        function generateInputs() {
+            const numEquations = parseInt(document.getElementById("numEquations").value);
+            if (isNaN(numEquations) || numEquations < 1) {
+                alert(isArabic ? "يرجى إدخال عدد صحيح موجب من المعادلات." : "Please enter a positive integer number of equations.");
+                return;
+            }
+
+            let inputsHTML = "";
+            for (let i = 0; i < numEquations; i++) {
+                inputsHTML += `
+                    <label for="equation${i}">المعادلة التفاضلية dy${i}/dx = f(x, y0, y1, ...):</label>
+                    <textarea id="equation${i}" placeholder="مثال: y0 + y1"></textarea>
+                    <label for="y0${i}">النقطة الابتدائية y<sub>${i}</sub>(x<sub>0</sub>):</label>
+                    <input type="number" id="y0${i}" placeholder="أدخل قيمة y${i}(x0)">
+                `;
+            }
+            document.getElementById("equationInputs").innerHTML = inputsHTML;
+        }
+
+        function rungeKuttaSystem(functions, x0, y0s, h, steps, order = 4) {
+            let x = x0;
+            let ys = [...y0s];
+            const results = [{ step: 0, x: x, ys: [...ys] }];
+
+            for (let i = 1; i <= steps; i++) {
+                const k1 = ys.map((y, idx) => h * functions[idx](x, ...ys));
+                const k2 = ys.map((y, idx) => h * functions[idx](x + h / 2, ...ys.map((y, j) => y + k1[j] / 2)));
+                const k3 = ys.map((y, idx) => h * functions[idx](x + h / 2, ...ys.map((y, j) => y + k2[j] / 2)));
+                const k4 = ys.map((y, idx) => h * functions[idx](x + h, ...ys.map((y, j) => y + k3[j])));
+
+                if (order === 4) {
+                    ys = ys.map((y, idx) => y + (k1[idx] + 2 * k2[idx] + 2 * k3[idx] + k4[idx]) / 6);
+                } else {
+                    ys = ys.map((y, idx) => y + (k1[idx] + k2[idx]) / 2);
+                }
+                x += h;
+                results.push({ step: i, x: Number(x.toFixed(8)), ys: ys.map((y) => Number(y.toFixed(8))) });
+            }
+            return results;
+        }
+
+        function solve() {
+            const numEquations = parseInt(document.getElementById("numEquations").value);
+            const x0 = parseFloat(document.getElementById("x0").value);
+            const h = parseFloat(document.getElementById("h").value);
+            const steps = parseInt(document.getElementById("steps").value);
+            const order = parseInt(document.getElementById("order").value);
+
+            if ([x0, h, steps].some(isNaN) || numEquations < 1) {
+                alert(isArabic ? "يرجى إدخال جميع القيم بشكل صحيح." : "Please enter all values correctly.");
+                return;
+            }
+
+            const functions = [];
+            const y0s = [];
+            for (let i = 0; i < numEquations; i++) {
+                const equationStr = document.getElementById(`equation${i}`).value;
+                const y0 = parseFloat(document.getElementById(`y0${i}`).value);
+                if (!equationStr || isNaN(y0)) {
+                    alert(isArabic ? `يرجى إدخال المعادلة والقيمة الابتدائية لـ y${i}.` : `Please enter the equation and initial value for y${i}.`);
+                    return;
+                }
+                try {
+                    functions.push(new Function("x", ...Array.from({ length: numEquations }, (_, j) => `y${j}`), `return ${equationStr};`));
+                    y0s.push(y0);
+                } catch (error) {
+                    alert(isArabic ? `خطأ في المعادلة ${i + 1}: ${error.message}` : `Error in equation ${i + 1}: ${error.message}`);
+                    return;
+                }
+            }
+
+            try {
+                const results = rungeKuttaSystem(functions, x0, y0s, h, steps, order);
+                displayResults(results);
+                plotChart(results);
+            } catch (error) {
+                displayError(error);
+            }
+        }
+
+        function displayResults(results) {
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = `
+                <h2>${isArabic ? "النتائج" : "Results"}</h2>
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>${isArabic ? "الخطوة" : "Step"}</th>
+                            <th>x</th>
+                            ${Array.from({ length: results[0].ys.length }, (_, i) => `<th>y${i}</th>`).join("")}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.map((r) => `
+                            <tr>
+                                <td>${r.step}</td>
+                                <td>${r.x}</td>
+                                ${r.ys.map((y) => `<td>${y}</td>`).join("")}
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+                <button onclick="exportResults()">${isArabic ? "تصدير النتائج كملف CSV" : "Export Results as CSV"}</button>
+            `;
+        }
+
+        function displayError(error) {
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = `
+                <div class="error-message">
+                    ${isArabic ? "خطأ:" : "Error:"} ${error.message}
+                </div>
+            `;
+        }
+
+        function plotChart(results) {
+            const ctx = document.getElementById("chart").getContext("2d");
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: results.map((r) => r.x),
+                    datasets: results[0].ys.map((_, idx) => ({
+                        label: `y${idx}`,
+                        data: results.map((r) => r.ys[idx]),
+                        borderColor: `hsl(${(idx * 360) / results[0].ys.length}, 100%, 50%)`,
+                        tension: 0.1,
+                    })),
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { title: { display: true, text: "x" } },
+                        y: { title: { display: true, text: "y" } },
+                    },
+                },
+            });
+        }
+
+        function exportResults() {
+            const results = chart.data.labels.map((x, i) => {
+                const row = [x, ...chart.data.datasets.map((dataset) => dataset.data[i])];
+                return row.join(",");
+            }).join("\n");
+
+            const headers = ["x", ...chart.data.datasets.map((dataset) => dataset.label)].join(",");
+            const csvContent = `${headers}\n${results}`;
+
+            const blob = new Blob([csvContent], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "runge_kutta_results.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
